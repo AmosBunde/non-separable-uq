@@ -234,10 +234,24 @@ direct computation above gives `ECE(bar_pi) = 0` and
 **Remarks for the estimator.**
 
 - The population identity `RCE(bar_pi) = MARD` is what experiment `e0` checks: when the
-  model predicts the marginal, the estimated Relational Calibration Error should sit at or
-  above `MARD`. It lands at `MARD` in the large-sample, debiased limit, and above `MARD`
-  when residual finite-sample bias remains, never systematically below it. The phrase "at or
-  above" in the experiment is the honest finite-sample reading of the equality.
+  model predicts the marginal, the estimated Relational Calibration Error converges to
+  `MARD` as the sample grows. The finite-sample point estimate approaches `MARD` from
+  **below**, not from above. This is a measured fact and the reason matters. The marginal
+  model is perfectly calibrated when pooled, so its population pooled `ECE` is exactly
+  zero; in a finite sample the pooled `ECE` is therefore pure positive bias (a folded
+  noise floor around a true gap of zero). That bias is subtracted in
+  `RCE = mean_c ECE_c - pooled ECE`, so the estimate sits below `MARD` by approximately the
+  pooled-`ECE` bias. The within-context terms carry a true gap near `d`, which suppresses
+  their own finite-sample bias to second order, so they do not compensate. As the sample
+  grows the pooled-`ECE` bias vanishes and `RCE` rises to `MARD`. Concretely, in a
+  reference run the point estimate moved `0.088 -> 0.097 -> 0.0986 -> 0.0998` as items and
+  raters increased, with the pooled `ECE` falling `0.0085 -> 0.0005` over the same range
+  (target `MARD = 0.10`). The honest e0 check is therefore convergence and consistency,
+  not a one-sided inequality: the experiment reports `RCE`, the within-context `ECE`, the
+  pooled `ECE`, `MARD`, and the bootstrap interval together, shows `MARD - RCE` matching
+  the pooled-`ECE` bias, and shows `MARD` entering the confidence interval as the sample
+  grows. An earlier draft of this remark, and the original task description, stated "at or
+  above `MARD`"; the runs falsify that direction, and the corrected statement is used.
 - The identity requires the prediction to resolve items rather than collapse several items
   into one bin. When several items share a bin, Jensen averaging inside the bin can only
   lower `sum_c rho(c) ECE_c`, so coarse binning biases the estimate downward, while
