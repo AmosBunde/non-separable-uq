@@ -130,6 +130,64 @@ def report_rce(
     )
 
 
+@dataclass(frozen=True)
+class RelationalControlComparison:
+    """The paired relational and control reports of a within-language comparison."""
+
+    language: str
+    relational: RCEReport
+    control: RCEReport
+
+
+def compare_relational_vs_control(
+    relational_data: PreferenceDataset,
+    relational_predictions: np.ndarray,
+    control_data: PreferenceDataset,
+    control_predictions: np.ndarray,
+    *,
+    n_permutations: int = 1000,
+    n_boot: int = 1000,
+    confidence: float = 0.95,
+    n_bins: int = DEFAULT_N_BINS,
+    scheme: BinningScheme = "adaptive",
+    debias: bool = True,
+    rng_seed: int = 0,
+) -> RelationalControlComparison:
+    """Report RCE on the relational set and the control set, in one language.
+
+    This is the comparison entry point. It enforces the within-language control across the
+    two sets (Section 8): the relational set and the control set must share a single
+    language. Reporting them separately would otherwise let a relational set in one language
+    be compared against a control set in another, which is exactly the confound the control
+    rules out. The two sets are reported by separate ``report_rce`` calls so that each RCE
+    is estimated within its own set, but the language match is checked first.
+    """
+    rel_language = relational_data.require_single_language()
+    ctl_language = control_data.require_single_language()
+    if rel_language != ctl_language:
+        raise ValueError(
+            "within-language control violated: the relational set is in language "
+            f"{rel_language!r} but the control set is in language {ctl_language!r}. A "
+            "relational-versus-control comparison must hold the language fixed."
+        )
+
+    relational_report = report_rce(
+        relational_data, relational_predictions,
+        n_permutations=n_permutations, n_boot=n_boot, confidence=confidence,
+        n_bins=n_bins, scheme=scheme, debias=debias, rng_seed=rng_seed,
+    )
+    control_report = report_rce(
+        control_data, control_predictions,
+        n_permutations=n_permutations, n_boot=n_boot, confidence=confidence,
+        n_bins=n_bins, scheme=scheme, debias=debias, rng_seed=rng_seed + 7,
+    )
+    return RelationalControlComparison(
+        language=rel_language,
+        relational=relational_report,
+        control=control_report,
+    )
+
+
 def format_report(report: RCEReport, *, title: Optional[str] = None) -> str:
     """A human-readable multi-line rendering of an RCEReport."""
     lines = []

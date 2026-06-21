@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from relcal import simulate
-from relcal.report import report_rce
+from relcal.report import compare_relational_vs_control, report_rce
 from relcal.schema import Judgment, PreferenceDataset
 
 
@@ -31,13 +31,13 @@ def _single_language_relational_and_control():
 def test_within_language_comparison_succeeds():
     """The relational and control reports run when both use the same language."""
     (rel, rel_truth), (ctl, ctl_truth) = _single_language_relational_and_control()
-    rel_report = report_rce(
-        rel, rel_truth.marginal_predictions(rel.arrays()), n_permutations=80, n_boot=80
+    comparison = compare_relational_vs_control(
+        rel, rel_truth.marginal_predictions(rel.arrays()),
+        ctl, ctl_truth.marginal_predictions(ctl.arrays()),
+        n_permutations=80, n_boot=80,
     )
-    ctl_report = report_rce(
-        ctl, ctl_truth.marginal_predictions(ctl.arrays()), n_permutations=80, n_boot=80
-    )
-    assert rel_report.language == ctl_report.language == "lang_x"
+    assert comparison.language == "lang_x"
+    assert comparison.relational.language == comparison.control.language == "lang_x"
 
 
 def test_mixed_language_dataset_is_rejected_by_report():
@@ -65,13 +65,30 @@ def test_require_single_language_guards_directly():
         mixed.require_single_language()
 
 
-def test_comparison_helper_fails_when_sets_use_different_languages():
-    """A relational-vs-control comparison must reject sets that differ in language.
+def test_comparison_fails_when_sets_use_different_languages_separately():
+    """The comparison path must reject sets that differ in language.
 
-    The relational set is in lang_x and the control set in lang_y. Pooling them into one
-    comparison and reporting must fail, because the comparison would no longer be within a
-    single language.
+    This is the path e1 actually uses: the relational set and the control set are reported
+    by separate calls. Each set is internally single-language, so per-call validation alone
+    would let a relational set in lang_x be compared against a control set in lang_y. The
+    comparison entry point checks the language match across the two sets and must raise.
     """
+    rel, rel_truth = simulate.generate(
+        n_items=20, n_raters=8, dispersion=0.15, relational=True, language="lang_x", seed=1
+    )
+    ctl, ctl_truth = simulate.generate(
+        n_items=20, n_raters=8, dispersion=0.0, relational=False, language="lang_y", seed=2
+    )
+    with pytest.raises(ValueError, match="within-language control"):
+        compare_relational_vs_control(
+            rel, rel_truth.marginal_predictions(rel.arrays()),
+            ctl, ctl_truth.marginal_predictions(ctl.arrays()),
+            n_permutations=10, n_boot=10,
+        )
+
+
+def test_combined_mixed_language_dataset_also_rejected():
+    """Pooling two languages into one dataset is also rejected at the report boundary."""
     rel, _ = simulate.generate(
         n_items=20, n_raters=8, dispersion=0.15, relational=True, language="lang_x", seed=1
     )
