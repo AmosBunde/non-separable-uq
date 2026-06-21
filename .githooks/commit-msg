@@ -1,0 +1,5 @@
+#!/bin/sh
+# Strip any AI co-authorship or attribution trailers from commit messages.
+# This repository forbids AI attribution on commits and pull requests.
+sed -i.bak '/^Co-Authored-By:/d; /Generated with \[Claude Code\]/d; /🤖 Generated with/d' "$1"
+rm -f "$1.bak"

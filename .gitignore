@@ -1,0 +1,22 @@
+# Local Claude Code configuration (never tracked)
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.coverage
+htmlcov/
+
+# Real annotation data must never be committed. Only the tiny synthetic
+# sample under data/sample/ is tracked (see data/ANNOTATION_PROTOCOL.md).
+data/real/
+*.real.jsonl
