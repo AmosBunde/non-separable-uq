@@ -122,14 +122,27 @@ relcal/
                    no-structure generator for the null
   uq.py            per-item predicted probability and epistemic uncertainty; a mock
                    ensemble backend for tests, a real backend stubbed
+  dataio.py        JSON Lines loader and writer; validates every record, refuses
+                   empty files
   report.py        the only public reporting entry point; RCE with null p-value and CI
 experiments/
   e0_estimator_validation.py   estimator validation on synthetic data; runs today
+  e1_pilot.py                  pilot: relational vs control RCE and the Proposition 1
+                               overconfidence check; runs today on the synthetic sample
+data/
+  schema.md                    the on-disk judgment format
+  ANNOTATION_PROTOCOL.md       context labelling, rater instructions, control matching
+  make_sample.py               deterministic regeneration of the synthetic sample
+  sample/sample.jsonl          tiny synthetic sample; real annotations are never
+                               committed
 docs/
   theory/Relational_UQ_Formalization.md   the canonical specification and proofs
   REVIEW.md                               target layout and component gap table
 tests/                                    estimator properties, null calibration,
-                                          report guard, within-language control
+                                          report guard, within-language control,
+                                          loader validation, pilot refusal guards
+ETHICS.md                                 rater consent, compensation, no-PII rule
+CLAUDE.md                                 guardrails and working rules for the repo
 ```
 
 The canonical specification is `docs/theory/Relational_UQ_Formalization.md`. Everything the
@@ -196,28 +209,48 @@ at large samples. The experiment reports the estimate, the within-context error,
 error, `MARD`, and the confidence interval together, so the convergence is visible rather than
 asserted.
 
-## How the pilot (e1) will run, once data exists
+## How to run the pilot (e1) today
 
-The pilot experiment is the next milestone and is not yet in the repository. It is specified
-in the build plan and in the formalization. When it lands, it will:
+The pilot experiment is in the repository and runs end to end on the shipped synthetic
+sample with the mock backend:
 
-- load one open instruct or DPO model's predicted preference probabilities and one
-  uncertainty method's epistemic uncertainty per item, through `relcal.uq`;
-- estimate the Relational Calibration Error separately on the relational set and on the
+```
+python3 experiments/e1_pilot.py
+python3 experiments/e1_pilot.py --quick               # smaller, faster configuration
+python3 experiments/e1_pilot.py --data path/to.jsonl  # your own judgment file
+```
+
+It does four things:
+
+- loads per-item predicted preference probabilities and per-item epistemic uncertainty
+  from a UQ backend, through `relcal.uq`; the default mock backend is a context-blind
+  ensemble centered on the empirical context-marginal preference, which is exactly the
+  context-blind model of Proposition 1;
+- estimates the Relational Calibration Error separately on the relational set and on the
   matched nonrelational control set, each with the permutation null and the bootstrap
   confidence interval, through `relcal.report`;
-- state, and then test rather than assume, the prediction that the Relational Calibration
-  Error is significantly positive on the relational set and consistent with zero on the
-  control set; and
-- run the overconfidence check of Proposition 1, correlating per-item epistemic uncertainty
-  against per-item relational miscalibration, reporting the correlation with a confidence
-  interval and no hardcoded value.
+- states, and then tests rather than assumes, the prediction that the Relational
+  Calibration Error is significantly positive on the relational set and consistent with
+  zero on the control set; and
+- runs the overconfidence check of Proposition 1, correlating per-item epistemic
+  uncertainty against per-item relational miscalibration, reporting the correlation with
+  a bootstrap confidence interval and no hardcoded value.
 
-The pilot will refuse to run on empty data with a clear message, will never emit placeholder
-results, and will print the full configuration and the language so that the within-language
-control is visible in the output. Only a tiny synthetic sample will be shipped in version
-control; real annotations will never be committed. See `ETHICS.md` for rater consent, fair
-compensation, context labelling, and the no-PII rule once the pilot phase begins.
+The pilot refuses to run on empty data with a clear message, never emits placeholder
+results, and prints the full configuration and the language so that the within-language
+control is visible in the output. The real-model backend (`--backend real`) is a stub
+that raises until it is wired to an open instruct or DPO model, so that path cannot
+fabricate numbers.
+
+Two honest caveats about the shipped sample. First, it is synthetic; the pilot on real
+annotated data is still ahead, and `data/ANNOTATION_PROTOCOL.md` fixes the collection
+design in advance. Second, the sample generator uses a context offset that is constant
+across items, so the per-item relational miscalibration barely varies across items and
+the Proposition 1 correlation is expected to be near zero on the sample rather than
+negative; on the sample, that check validates the pipeline, not the sign prediction. The
+data format is documented in `data/schema.md`, and only the tiny synthetic sample is ever
+committed; real annotations never are. See `ETHICS.md` for rater consent, fair
+compensation, context labelling, and the no-PII rule once the collection phase begins.
 
 ## Using the library directly
 
@@ -246,8 +279,9 @@ python3 -m pytest -q
 
 The suite covers the non-negativity of the Relational Calibration Error, the analytic
 recovery of the dispersion within a two-sided tolerance, the permutation false-positive rate
-under no structure, the report no-bare-RCE guard, and the within-language control, including
-the comparison path that the pilot will use.
+under no structure, the report no-bare-RCE guard, the within-language control, including
+the comparison path the pilot uses, the loader validation and empty-file refusal, and the
+pilot refusal guards (empty data, missing control set, unwired real backend).
 
 ## References
 

@@ -51,20 +51,27 @@ Status legend: done, in progress, todo.
 | Setup: gitignore, hooks, attribution | A2, A3 | 1 | done |
 | `docs/theory/Relational_UQ_Formalization.md` | source of truth | 1 | done |
 | `docs/REVIEW.md` | Task 1 | 1 | done |
-| `relcal/schema.py` | Section 2, Section 8 | 1 | todo |
-| `relcal/calibration.py` | Section 3, Section 4 | 1 | todo |
-| `relcal/permutation.py` | Section 6 | 1 | todo |
-| `relcal/simulate.py` | Section 4.3, Section 6 | 1 | todo |
-| `relcal/uq.py` | Section 5 | 1 | todo |
-| `relcal/report.py` | Section 7 | 1 | todo |
-| `experiments/e0_estimator_validation.py` | Section 4.2, 4.4, 6.1 | 1 | todo |
-| `tests/` (Prompt 1 subset) | Section 4.2, 6.1, 7, 8 | 1 | todo |
-| `data/schema.md`, loader | Task 5 | 2 | todo |
-| `data/ANNOTATION_PROTOCOL.md` | Task 5 | 2 | todo |
-| `experiments/e1_pilot.py` | Section 5, Task 6 | 2 | todo |
-| `README.md` | Task 7 | 2 | todo |
-| `ETHICS.md` | Task 7 | 2 | todo |
-| `CLAUDE.md` | Task 7 | 2 | todo |
+| `relcal/schema.py` | Section 2, Section 8 | 1 | done |
+| `relcal/calibration.py` | Section 3, Section 4 | 1 | done |
+| `relcal/permutation.py` | Section 6 | 1 | done |
+| `relcal/simulate.py` | Section 4.3, Section 6 | 1 | done |
+| `relcal/uq.py` | Section 5 | 1 | done (mock backend; real backend stubbed, raises) |
+| `relcal/report.py` | Section 7 | 1 | done |
+| `experiments/e0_estimator_validation.py` | Section 4.2, 4.4, 6.1 | 1 | done |
+| `tests/` (Prompt 1 subset) | Section 4.2, 6.1, 7, 8 | 1 | done |
+| `data/schema.md`, loader (`relcal/dataio.py`) | Task 5 | 2 | done |
+| `data/ANNOTATION_PROTOCOL.md` | Task 5 | 2 | done |
+| `data/sample/sample.jsonl`, `data/make_sample.py` | Task 5 | 2 | done (synthetic only) |
+| `experiments/e1_pilot.py` | Section 5, Task 6 | 2 | done (runs on the sample with the mock backend; real-model run pending `RealEnsembleUQ`) |
+| `tests/` (Prompt 2 subset: loader, pilot guards) | Section 5, 7, Task 5, 6 | 2 | done |
+| `README.md` | Task 7 | 2 | done |
+| `ETHICS.md` | Task 7 | 2 | done |
+| `CLAUDE.md` | Task 7 | 2 | done |
+
+Remaining work is outside the repository code: wiring `RealEnsembleUQ` to an open
+instruct or DPO model, and collecting real annotations under
+`data/ANNOTATION_PROTOCOL.md` and `ETHICS.md`. Both are tracked here and both paths
+currently raise rather than fabricate output.
 
 ## Honest positioning
 
